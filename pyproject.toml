@@ -1,0 +1,14 @@
+[project]
+name = "f1-strategy"
+version = "0.1.0"
+description = "Dry-race F1 tyre strategy comparison simulator using OpenF1 data."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+f1-strategy = "f1_strategy:main"
+
+[build-system]
+requires = ["uv_build>=0.13.3,<0.14.0"]
+build-backend = "uv_build"
