@@ -1,0 +1,11 @@
+# Season-wide dry-race tyre rules applied to every event unless an event file overrides them.
+# Source: FIA 2025 Formula 1 Sporting Regulations, Issue 1, Art. 30.5 m). Wording for
+# 2023 and 2024 is checked when event reference tables are built (M3).
+#
+# Event-specific files (config/events/<season>_<event>.toml) may override these keys and
+# add optional rules, each with a cited source:
+#   min_pit_stops  - mandatory number of pit stops
+#   max_stint_laps - maximum laps on one tyre set
+
+[tyre_rules]
+min_distinct_dry_compounds = 2

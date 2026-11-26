@@ -1,0 +1,41 @@
+# Evaluation contract. Normative definitions: docs/evaluation.md.
+#
+# Status of each value:
+#   fixed       - set at the M0 freeze point; changing it is a versioned contract change.
+#   provisional - may be adjusted on 2023-2024 data only, until the M6 freeze.
+#   dev-only    - development sensitivity analysis; never used for the holdout result.
+
+[splits]
+burn_in_seasons = [2023]      # fixed: training data only, never scored
+development_seasons = [2024]  # fixed: walk-forward scored targets for model selection
+holdout_seasons = [2025]      # fixed: evaluated once with the frozen procedure
+
+[walk_forward]
+window = "expanding"              # fixed
+prediction_cutoff = "race_start"  # fixed: only information available before the race start
+
+[eligibility]
+# Strategy-level scoring (E2-E4). Structural rules are defined in docs/evaluation.md.
+min_green_flag_lap_share = 0.80                  # provisional
+green_flag_lap_share_sensitivity = [0.70, 0.90]  # dev-only
+pit_loss_window = ["in_lap", "out_lap"]          # fixed
+e3_min_drivers_per_plan_class = 3                # provisional (K)
+
+[decision_rule]
+comparison_set = "supported"   # fixed: regret is measured against supported legal plans
+regret_quantile = 0.90         # fixed
+tau_s = 5.0                    # provisional: 90th-percentile regret limit for "robust"
+robust_min_grid_share = 0.80   # provisional: share of grid points where the headline plan has minimum expected regret
+
+[feasibility_gate]
+# Fixed at M0. Not adjusted afterwards, including when decision_rule.tau_s or the
+# provisional [eligibility] or model.toml [support] values change.
+eligibility_min_green_flag_lap_share = 0.80                  # fixed: gate denominator, independent of eligibility.*
+support_min_stints_per_age = 10                              # fixed: gate S, independent of model.toml support.*
+support_min_races_per_age = 3                                # fixed: gate R
+support_min_circuit_races = 1                                # fixed: gate R_c
+scenario = "central"                                         # fixed: common_trend.central_scenario in model.toml
+regret_quantile = 0.90                                       # fixed
+tau_gate_s = 5.0                                             # fixed
+min_decision_useful_share = 0.50                             # fixed
+required_supported_plan_classes = ["one_stop", "two_stop"]   # fixed

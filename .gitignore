@@ -9,8 +9,20 @@ wheels/
 # Virtual environments
 .venv
 
-# Local Claude Code instructions (not versioned)
-CLAUDE.md
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated data: raw OpenF1 response cache and DuckDB databases.
+# Versioned reference data under data/ is not ignored.
+data/raw/
+*.duckdb
+*.duckdb.wal
+
+# Generated reports
+reports/
 
 # macOS
 .DS_Store

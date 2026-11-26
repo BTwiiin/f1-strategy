@@ -14,7 +14,12 @@ The tool compares strategies; it does not predict races. It reports relative tim
 
 ## Status
 
-Early development: evaluation contract and project skeleton (milestone M0). See [`MVP_roadmap.md`](MVP_roadmap.md) for scope, evaluation design and milestones.
+Early development: evaluation contract and project skeleton (milestone M0).
+
+- [`docs/scope.md`](docs/scope.md): scope and modelling assumptions.
+- [`docs/evaluation.md`](docs/evaluation.md): evaluation contract.
+- [`docs/common_trend.md`](docs/common_trend.md): common-trend scenario grid and its sources.
+- [`MVP_roadmap.md`](MVP_roadmap.md): milestones, deliverables and acceptance criteria.
 
 ## Development
 

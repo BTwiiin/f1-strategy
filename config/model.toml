@@ -1,0 +1,29 @@
+# Model assumptions. Normative definitions: docs/evaluation.md (support) and
+# docs/common_trend.md (common-trend grid). Status labels as in evaluation.toml.
+
+[plans]
+stop_counts = [1, 2]  # fixed: MVP scope
+
+[support]
+min_stints_per_age = 10        # provisional (S)
+min_races_per_age = 3          # provisional (R)
+min_circuit_races = 1          # provisional (R_c)
+extrapolation_margin_laps = 3  # provisional (E)
+# Reference tyre age: deferred to M4 (initially 2-3 laps).
+
+[common_trend]
+# Units: s/lap; positive = the car gets faster each lap independent of tyres.
+# Fuel bounds and central value: per-circuit fuel gain of the 2019 TUM race-simulation
+# parameter sets (docs/common_trend.md). Fixed.
+fuel_gain_min = 0.029
+fuel_gain_max = 0.082
+fuel_gain_median = 0.056
+track_evolution_allowance = 0.02  # provisional: labelled judgement allowance, symmetric
+step = 0.01                       # provisional
+dev_resolution_step = 0.005       # dev-only
+central_scenario = 0.06           # fixed: grid point nearest fuel_gain_median
+
+[shrinkage]
+# Structure fixed at M0; estimator and strength deferred to M4.
+circuit_effect_target = "global"
+season_effect_target = "previous_season"
