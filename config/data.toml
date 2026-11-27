@@ -1,0 +1,27 @@
+# OpenF1 ingestion (M2). Seasons per role come from evaluation.toml [splits]:
+# dev = burn-in + development seasons; holdout = holdout seasons (sealed until M8).
+
+base_url = "https://api.openf1.org/v1"
+raw_dir = "data/raw"       # raw cache: <raw_dir>/<role>/<endpoint>/<key>.json + manifest.jsonl
+db_dir = "data"            # DuckDB files: <db_dir>/<role>.duckdb
+reports_dir = "reports"
+
+[http]
+max_per_second = 3         # OpenF1 free tier
+max_per_minute = 30        # OpenF1 free tier
+max_attempts = 5
+backoff_base_s = 2.0       # retry delay = backoff_base_s * 2**attempt
+timeout_s = 60
+
+[sessions]
+# Grand Prix weekend sessions by OpenF1 session_name; testing and sprint sessions are excluded.
+include = ["Practice 1", "Practice 2", "Practice 3", "Qualifying", "Race"]
+
+[endpoints]
+season = ["meetings", "sessions"]
+every_session = ["drivers", "laps", "stints", "pit", "race_control", "weather"]
+race = ["intervals", "position", "session_result"]
+qualifying = ["starting_grid", "session_result"]
+
+[holdout]
+freeze_tag = "freeze-m7"   # holdout build/run only from exactly this commit with a clean tree

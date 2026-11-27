@@ -1,2 +1,4 @@
 def main() -> None:
-    print("Hello from f1-strategy!")
+    from f1_strategy.cli import main as cli_main
+
+    cli_main()
