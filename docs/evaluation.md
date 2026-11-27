@@ -51,8 +51,9 @@ Rules are fixed unless marked otherwise.
 | During the direction review, a data-quality check retrieved one 2025 race (Abu Dhabi). Only its lap count and missing-value count were reported. | No 2025 pace, strategy or lap-time values informed any decision. |
 | External findings (e.g. "practice long runs predict race pace poorly") were computed on 2022–2026 data. | Treated as non-binding priors. Feature decisions use 2023–2024 development results only. |
 | Public knowledge of 2025 race outcomes cannot be removed. | The guarantee rests on the frozen procedure and code-level isolation, not on ignorance. |
+| Sealed 2025 download (M2): 770 raw responses cached under `data/raw/holdout`. | Not parsed, built or inspected; only the request count was reported. Readable only by the holdout role from the frozen commit. |
 
-Later exposures, including the sealed 2025 download (M2), are appended here.
+Later exposures are appended here.
 
 ## Freeze points
 
