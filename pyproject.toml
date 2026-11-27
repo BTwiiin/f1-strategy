@@ -1,10 +1,12 @@
 [project]
 name = "f1-strategy"
 version = "0.1.0"
-description = "Dry-race F1 tyre strategy comparison simulator using OpenF1 data."
+description = "F1 tyre-pace forecasting and dry-race strategy comparison using OpenF1 data."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "numpy>=2.5.5",
+]
 
 [project.scripts]
 f1-strategy = "f1_strategy:main"

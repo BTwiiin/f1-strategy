@@ -4,8 +4,10 @@
 #
 # Event-specific files (config/events/<season>_<event>.toml) may override these keys and
 # add optional rules, each with a cited source:
-#   min_pit_stops  - mandatory number of pit stops
-#   max_stint_laps - maximum laps on one tyre set
+#   min_pit_stops    - mandatory number of pit stops
+#   max_stint_laps   - maximum laps in one stint
+#   max_set_age_laps - maximum tyre age of one set, including laps before the stint
+# The two limits are distinct rules; an override names the one its source states.
 
 [tyre_rules]
 min_distinct_dry_compounds = 2

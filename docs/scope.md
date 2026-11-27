@@ -1,90 +1,116 @@
 # Scope and modelling assumptions
 
-This document defines what the simulator models, what it excludes and the conventions every component follows. The evaluation contract is in [`evaluation.md`](evaluation.md); the common-trend scenario grid and its sources are in [`common_trend.md`](common_trend.md). Numerical values live in the versioned configuration under `config/`.
+Where things are defined:
+- prediction tasks: [`forecasting.md`](forecasting.md);
+- evaluation: [`evaluation.md`](evaluation.md);
+- fuel sources and the common-trend grid: [`common_trend.md`](common_trend.md);
+- numerical values: `config/`.
 
 ## Purpose
 
-The simulator compares dry-weather tyre strategies for a single car before a race. Its outputs are relative time differences between plans and the robustness of their ranking under parameter uncertainty and common-trend assumptions. It does not predict absolute race time, finishing position or the true optimal strategy.
+The project studies tyre-dependent race pace in dry Formula 1 races on real data. Strategy optimisation is its main application. It produces three kinds of result, and they are never treated as equivalent:
+
+1. **Predictive performance.** Temporal out-of-sample forecasts of stint lap times. These can be checked against observed laps.
+2. **Model-implied strategy comparisons.** Plan rankings produced by the simulator from the validated models. They depend on stated assumptions and cannot be checked directly.
+3. **Empirically verifiable decision outcomes.** Evidence levels E2–E4. These are partial and confounded.
+
+The project's value does not depend on the data supporting (2). Pit timing and compound choice are endogenous team decisions, so predictive validity does not establish that plan comparisons are causally valid.
 
 ## Data
 
-- Source: OpenF1, seasons 2023–2025 (one regulation era), stored in DuckDB.
+- Source: OpenF1, Grand Prix weekends 2023–2025 (one regulation era).
+  - Sessions used: race, qualifying, practice.
+  - Excluded: sprint sessions and 2026.
 - Raw responses are stored unchanged; derived tables are rebuilt from the raw cache.
-- Season roles (burn-in, development, holdout) are defined in [`evaluation.md`](evaluation.md#splits-and-walk-forward-protocol).
+- Season roles: [`evaluation.md`](evaluation.md#splits).
 
-## Included
+## Included and excluded
 
-- Dry races with predominantly green-flag running.
-- A single car, without explicit rival interactions.
-- Slick compounds.
-- One-stop and two-stop plans (`config/model.toml`: `plans.stop_counts`).
-- Tyre degradation, compound pace difference and green-flag pit-stop loss.
-- Re-estimation of tyre parameters across a common-trend scenario grid.
-- Parameter uncertainty, sensitivity and data-support analysis.
-- Historical validation with a frozen holdout.
+**Included:**
+- dry races with mostly green-flag running;
+- a single car;
+- slick compounds;
+- one-stop and two-stop plans (`plans.stop_counts`);
+- compound pace, tyre-age effects, the race-lap trend and pit loss;
+- driver, team, circuit, weather, traffic and same-weekend information, as observed at the information checkpoint;
+- uncertainty, data support and sensitivity analysis.
 
-## Excluded
+**Excluded:**
+- live data;
+- models of interaction with rivals (undercut, overtaking, pit-exit position);
+- SC/VSC strategy optimisation;
+- wet or changing-weather races;
+- retirements and damage;
+- team orders;
+- tyre inventory and set condition;
+- an LLM interface.
 
-- Live race recommendations.
-- Traffic, overtaking, undercut and pit-exit position models.
-- Safety Car and VSC strategy optimisation.
-- Wet and changing-weather races.
-- Retirements, damage and mechanical failures.
-- Team orders and double-stacking.
-- Exact tyre-set inventory and tyre condition (for example qualifying wear or heat cycles).
-- An LLM interface.
+Known consequence: at circuits where track position dominates, the simulator will tend to prefer more stops than teams choose. This is reported as a limitation, not tuned away.
 
-Known consequence of the single-car, pace-only scope: at circuits where track position dominates, the simulator will tend to prefer more stops than teams choose. This is reported as a scope limitation, not tuned away.
+## Information checkpoints
 
-## Prediction cutoff
-
-A prediction for a race may use only information available before that race's start: earlier races, pre-race sessions of the same event, event rules and the tyre nomination. Information from the race itself is used only for scoring. The MVP models do not use same-weekend session data; it is permitted by the cutoff but listed as an extension.
+- **Pre-race:** the race start. Usable information: earlier races, earlier sessions of the same event, event rules and tyre nomination.
+- **In-race:** the forecast origin `t0` ([`forecasting.md`](forecasting.md)). This is a historical replay only.
+- **Availability of a record (`available_at`)** is reconstructed from its on-track timestamp. It approximates what a team could know at that moment; it is not the time the data was published. A record is usable at checkpoint `t` only if `available_at < t`. When availability cannot be reconstructed, the record is excluded rather than given an estimated time.
+- Information after the checkpoint is used only for scoring.
 
 ## Strategy representation
 
-A plan consists of a starting compound, an ordered compound sequence, a pit-lap sequence and an optional initial tyre age per stint. Legal plans are enumerated exhaustively from the event rules in `config/events/` (season defaults in `default.toml`, event-specific overrides with cited sources). Rules are never hard-coded.
+A plan is a starting compound, an ordered compound sequence, a pit-lap sequence and an optional initial tyre age per stint. Legal plans are enumerated from event rules in `config/events/`; rules are never hard-coded.
 
-Compounds are modelled by their absolute designation (C0–C6). Relative labels (`SOFT`, `MEDIUM`, `HARD`) are used for event rules and presentation.
+- **Compounds:** modelled by absolute designation (C0–C6). Relative labels (`SOFT/MEDIUM/HARD`) are used for event rules and presentation.
+- **Tyre age:** counts every lap on a set, including neutralised laps. The first lap on a new set has age 1. The mapping from OpenF1 stint fields to this convention is verified in M3.
+- **Pit lap:** the in-lap; the next stint starts with the out-lap. Pit laps are strictly increasing within `[1, race_laps − 1]`.
+- **Plan identifier:** for example `C3[0]-C2[0]@20` (compounds with initial ages, then pit laps).
+- **Initial age:** only the starting set may have a non-zero initial age.
+- **Stint limits:** `max_stint_laps` caps a stint; `max_set_age_laps` caps the age of a set.
+- **Default tyre assumptions, labelled in every output:** new sets unless an initial age is supplied; sufficient inventory; no further tyre-condition modelling.
 
-## Default tyre assumptions
+## Pace model
 
-Labelled in every output:
-
-- every stint starts on a new set unless the user supplies an initial tyre age;
-- tyre inventory is sufficient for every enumerated plan;
-- tyre age counts all laps on a set, including neutralised laps; stints containing SC/VSC laps are flagged;
-- no further tyre-condition modelling.
-
-## Relative time model
-
-For a plan `p`:
+Structural model (baseline B2) for driver `i` in race `r` on lap `l`, compound `c`, tyre age `a`:
 
 ```
-relative_plan_time(p) = compound_effect(p) + tyre_age_effect(p) + pit_losses(p)
+lap_time = μ_ir + δ_c + f_c(a) − g·l + ε
 ```
 
-- `compound_effect`: sum over laps of the compound pace offset at the reference tyre age.
-- `tyre_age_effect`: sum over laps of the per-lap tyre-age effect at the lap's tyre age (zero at the reference age). Only per-lap effects are stored; cumulative stint losses are derived by summation and never added separately.
-- `pit_losses`: sum of green-flag pit losses.
+- `μ_ir` is a driver-race intercept shared by all stints. It carries the pace level across pit stops.
+- `δ_c` is the compound pace offset at the reference tyre age.
+- `f_c` is the tyre-age effect, zero at the reference age.
+- `g` is the common trend.
+- Circuit and season effects are additive, and shrunk towards the global estimate and the previous season respectively.
+- Richer models, which extend B2 rather than replace it, are listed in [`forecasting.md`](forecasting.md#model-ladder).
 
-The shared lap-time trend is not part of this sum (see below).
+**Strategy layer (M1 simulator).** For models without race-lap interactions:
+
+```
+relative_plan_time = compound_effect + tyre_age_effect + pit_losses
+```
+
+- Only per-lap effects are stored; cumulative stint losses are derived.
+- A **pit loss** is the incremental time of a stop relative to a normal in-lap and out-lap on the same tyres, added once per stop.
+- Models with race-lap terms are evaluated on a lap grid instead.
 
 ## Common trend
 
-Lap times contain a trend shared by every car and every plan: fuel burn makes the car faster each lap, and track evolution shifts lap times further. Neither is observed in OpenF1.
-
-Sign convention (all quantities in s/lap):
-
-- `observed_net_stint_slope`: the within-stint lap-time slope estimated from data; positive means lap times increase with tyre age.
-- `common_trend_gain = fuel_gain + track_evolution_gain`: the per-lap lap-time improvement common to all plans; positive means the car gets faster each lap independent of tyres.
+Sign convention, in s/lap:
+- `common_trend_gain = fuel_gain + track_evolution_gain`; positive means the car gets faster each lap.
 - `inferred_tyre_degradation = observed_net_stint_slope + common_trend_gain`.
 
-With a free intercept per stint, the common trend and linear tyre degradation are not separately identifiable: only `observed_net_stint_slope` is observed. The common trend is therefore an explicit external assumption, never a fitted coefficient. A trend that is linear in race lap and identical for all plans is a simplifying assumption, not an established physical fact.
+The observed net stint slope is never conflated with degradation.
 
-In a green-flag single-car comparison without refuelling, every legal plan shares the same trend, so its direct lap-time contribution cancels and is never added to strategy deltas. The assumption still matters: one-stop and two-stop plans accumulate different total tyre age, so the assumed trend changes inferred degradation and can change the ranking. It enters the simulator only through tyre-parameter sets re-estimated under each scenario of the grid defined in [`common_trend.md`](common_trend.md).
+**Estimation.**
+- With free stint intercepts, `g` and degradation are not separable ([`identifiability.md`](identifiability.md)).
+- B2 estimates `g` through the shared intercept: the tyre-age reset at each stop happens at a different race lap.
+- This identification depends on that assumption. Tyre management biases it, and the bias does not show up in on-policy prediction error.
+- The fuel range in [`common_trend.md`](common_trend.md) is a plausibility reference for the fuel component, not a validation criterion for `g`.
 
-## Parameter model
+**In strategy comparisons.**
+- The trend's direct contribution is identical for every plan and cancels.
+- It still matters through inferred degradation.
+- Strategy outputs therefore also refit tyre parameters with `g` fixed at each point of the sensitivity grid.
 
-- Tyre model: absolute compound main effect plus circuit effect and season effect, additive, with driver-race effects. Interactions are added only if development validation justifies them.
-- Fallback levels: circuit estimates shrunk towards the global estimate; season effect shrunk towards the previous season. No circuit-group level in the MVP.
-- Every parameter set is tagged with its common-trend scenario, fallback level and provenance, and is aligned across components by joint bootstrap sample ID.
+## Stint order
+
+- **Without race-lap interactions:** plans that differ only in stint order have identical times. They are reported as model-equivalent ([`evaluation.md`](evaluation.md#model-equivalent-plans)).
+- **Phase-aware models** can produce order differences. These are reported as model-implied, together with whether the phase term passed the ablation. They are never presented as evidence that one order is faster ([`stint_order.md`](stint_order.md)).

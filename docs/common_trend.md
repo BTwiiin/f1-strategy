@@ -1,6 +1,6 @@
 # Common-trend scenario grid
 
-The common trend (`common_trend_gain`, s/lap, positive = faster each lap) is an external assumption, not an estimate (see [`scope.md`](scope.md#common-trend)). This document records the sources of its fuel component, the derivation of the scenario grid and the limitations of both. Values are in `config/model.toml` (`[common_trend]`).
+The common trend (`common_trend_gain`, s/lap, positive = faster each lap) is estimated in the structural model ([`scope.md`](scope.md#common-trend)). This document records the external fuel range, used as a plausibility reference for the fuel component, not as a validation criterion for the estimated trend, and the sensitivity grid at which tyre parameters are refitted for strategy outputs. Values are in `config/model.toml` (`[common_trend]`).
 
 ## Fuel component
 
@@ -71,8 +71,8 @@ Track evolution (rubbering-in, track temperature) has no cited source in the MVP
 
 - Range: `[fuel_gain_min − allowance, fuel_gain_max + allowance] = [0.009, 0.102]`, rounded outwards to multiples of the step: **0.00–0.11 s/lap**.
 - Step: 0.01 s/lap (provisional), 12 points. Development-only resolution check: 0.005 s/lap over the same range, 23 points.
-- Central scenario: the grid point nearest the median fuel gain with zero track-evolution allowance, **0.06 s/lap** (fixed). It does not move if the allowance or step is adjusted before the M6 freeze.
+- Central scenario: the grid point nearest the median fuel gain with zero track-evolution allowance, **0.06 s/lap** (fixed). It does not move if the allowance or step is adjusted before the M7 freeze.
 
-The grid is a set of stated assumptions, not a statistical confidence interval. No probability weights are placed on it by default; an aggregated probability is reported only under an explicit, documented prior and labelled as prior-dependent. Development fit (E2) is never used to select or weight scenarios.
+The grid is a set of stated sensitivity assumptions, not a confidence interval and not weighted. Prediction fit is never used to select or weight grid scenarios ([`evaluation.md`](evaluation.md#evidence)).
 
 The grid is computed by `f1_strategy.config.common_trend_grid`.

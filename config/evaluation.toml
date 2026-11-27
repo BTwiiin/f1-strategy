@@ -2,7 +2,7 @@
 #
 # Status of each value:
 #   fixed       - set at the M0 freeze point; changing it is a versioned contract change.
-#   provisional - may be adjusted on 2023-2024 data only, until the M6 freeze.
+#   provisional - may be adjusted on 2023-2024 data only, until the M7 freeze.
 #   dev-only    - development sensitivity analysis; never used for the holdout result.
 
 [splits]
@@ -12,7 +12,19 @@ holdout_seasons = [2025]      # fixed: evaluated once with the frozen procedure
 
 [walk_forward]
 window = "expanding"              # fixed
-prediction_cutoff = "race_start"  # fixed: only information available before the race start
+prediction_cutoff = "race_start"  # fixed: pre-race checkpoint (T2, strategy outputs)
+
+[forecast]
+# Forecasting tasks. Normative definitions: docs/forecasting.md.
+origin = "out_lap_start"          # fixed: T1 origin t0 = date_start of the out-lap of stint k >= 2
+min_origin_stint = 2              # fixed
+horizons = [5, 10, 15]            # fixed: scored horizons, in stint laps
+max_stint_lap = 15                # fixed: last forecast target, in stint laps
+min_clean_laps_before_origin = 3  # provisional
+
+[ablation]
+# Cumulative order of feature groups (docs/forecasting.md). Keep-rule values: modelling_plan.md (M4).
+group_order = ["F1_tyre", "F2_context", "F3_team_driver", "F4_weather", "F5_traffic", "F6_same_weekend"]  # fixed
 
 [eligibility]
 # Strategy-level scoring (E2-E4). Structural rules are defined in docs/evaluation.md.
